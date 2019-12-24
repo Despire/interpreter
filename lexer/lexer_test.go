@@ -13,7 +13,18 @@ let add = fn(x, y) {
  x + y;
 };
 
-let result = add(five, ten);`
+let result = add(five, ten);
+!-/*5;
+5 < 10 > 5;
+
+if (5 < 10) {
+ return true;
+} else {
+ return false;
+}
+
+10 == 10;
+10 != 9;`
 
 	tests := []struct {
 		expectedType    token.Type
@@ -54,6 +65,43 @@ let result = add(five, ten);`
 		{token.COMMA, ","},
 		{token.IDENTIFIER, "ten"},
 		{token.RIGHTPARENTHESIS, ")"},
+		{token.SEMICOLON, ";"},
+		{token.BANG, "!"},
+		{token.MINUS, "-"},
+		{token.SLASH, "/"},
+		{token.ASTERISK, "*"},
+		{token.INTEGER, "5"},
+		{token.SEMICOLON, ";"},
+		{token.INTEGER, "5"},
+		{token.LESST, "<"},
+		{token.INTEGER, "10"},
+		{token.GREATERT, ">"},
+		{token.INTEGER, "5"},
+		{token.SEMICOLON, ";"},
+		{token.IF, "if"},
+		{token.LEFTPARENTHESIS, "("},
+		{token.INTEGER, "5"},
+		{token.LESST, "<"},
+		{token.INTEGER, "10"},
+		{token.RIGHTPARENTHESIS, ")"},
+		{token.LEFTBRACKET, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RIGHTBRACKET, "}"},
+		{token.ELSE, "else"},
+		{token.LEFTBRACKET, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RIGHTBRACKET, "}"},
+		{token.INTEGER, "10"},
+		{token.EQUAL, "=="},
+		{token.INTEGER, "10"},
+		{token.SEMICOLON, ";"},
+		{token.INTEGER, "10"},
+		{token.NEQUAL, "!="},
+		{token.INTEGER, "9"},
 		{token.SEMICOLON, ";"},
 		{token.EOF, "\x00"},
 	}

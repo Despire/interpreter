@@ -1,8 +1,9 @@
 package lexer
 
 import (
-	"github.com/despire/interpreter/token"
 	"unicode"
+
+	"github.com/despire/interpreter/token"
 )
 
 const (
@@ -33,12 +34,22 @@ func New(input string) *Lexer {
 // readChar advances the pointers in the input buffer to the next character.
 func (l *Lexer) readChar() {
 	if l.readPosition >= len(l.input) {
-		l.char = 0
+		l.char = NULL
 	} else {
 		l.char = l.input[l.readPosition]
 	}
 	l.position = l.readPosition
 	l.readPosition += 1
+}
+
+// peekChar returns the next character (the one that comes after
+// position). This is usually used operators with two or more characters.
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return NULL
+	} else {
+		return l.input[l.readPosition]
+	}
 }
 
 // skipWhitespace advances the pointers in the input buffer to the next non-whitespace character.
@@ -69,10 +80,38 @@ func (l *Lexer) NextToken() token.Token {
 		t = token.Token{Typ: token.SEMICOLON, Literal: string(l.char)}
 	case charFromToken(token.COMMA):
 		t = token.Token{Typ: token.COMMA, Literal: string(l.char)}
+	case charFromToken(token.ASSIGN):
+		if l.peekChar() == charFromToken(token.ASSIGN) {
+			t = token.Token{Typ: token.EQUAL, Literal: string(l.char) + string(l.peekChar())}
+
+			// advance in buffer.
+			l.readChar()
+
+			break
+		}
+		t = token.Token{Typ: token.ASSIGN, Literal: string(l.char)}
 	case charFromToken(token.PLUS):
 		t = token.Token{Typ: token.PLUS, Literal: string(l.char)}
-	case charFromToken(token.ASSIGN):
-		t = token.Token{Typ: token.ASSIGN, Literal: string(l.char)}
+	case charFromToken(token.MINUS):
+		t = token.Token{Typ: token.MINUS, Literal: string(l.char)}
+	case charFromToken(token.BANG):
+		if l.peekChar() == charFromToken(token.ASSIGN) {
+			t = token.Token{Typ: token.NEQUAL, Literal: string(l.char) + string(l.peekChar())}
+
+			// advance in buffer
+			l.readChar()
+
+			break
+		}
+		t = token.Token{Typ: token.BANG, Literal: string(l.char)}
+	case charFromToken(token.ASTERISK):
+		t = token.Token{Typ: token.ASTERISK, Literal: string(l.char)}
+	case charFromToken(token.SLASH):
+		t = token.Token{Typ: token.SLASH, Literal: string(l.char)}
+	case charFromToken(token.LESST):
+		t = token.Token{Typ: token.LESST, Literal: string(l.char)}
+	case charFromToken(token.GREATERT):
+		t = token.Token{Typ: token.GREATERT, Literal: string(l.char)}
 	case NULL:
 		t = token.Token{Typ: token.EOF, Literal: string(l.char)}
 	default:
@@ -86,7 +125,7 @@ func (l *Lexer) NextToken() token.Token {
 
 			literal := l.input[curr:l.position]
 
-			t = token.Token{Typ: token.LookupIdentified(literal), Literal: literal}
+			t = token.Token{Typ: token.LookupIdentifier(literal), Literal: literal}
 
 			// the pointer in the buffer is set to the first non ascii character
 			// so we just return the token.
