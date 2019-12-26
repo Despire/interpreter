@@ -13,6 +13,12 @@ type (
 		Value string
 	}
 
+	// IntegerLiteral represents and integer expression.
+	IntegerLiteral struct {
+		Token token.Token
+		Value int
+	}
+
 	// LetStatement consists of
 	// a identified (the LHS of the statement)
 	// and an expression (the RHS of the statement).
@@ -63,6 +69,11 @@ func (s *LetStatement) String() string {
 func (i *Identifier) expression()     {}
 func (i *Identifier) Literal() string { return i.Token.Literal }
 func (i *Identifier) String() string  { return i.Value }
+
+// implement Expression interface for type checking.
+func (il *IntegerLiteral) expression()     {}
+func (il *IntegerLiteral) Literal() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string  { return il.Token.Literal }
 
 // implement Statement interface for type checking.
 func (r *ReturnStatement) statement()      {}

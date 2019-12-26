@@ -5,6 +5,19 @@ import (
 	"github.com/despire/interpreter/ast"
 	"github.com/despire/interpreter/lexer"
 	"github.com/despire/interpreter/token"
+	"strconv"
+)
+
+type precedence int
+
+const (
+	LOWEST precedence = iota
+	EQUALS
+	LTGT
+	SUM
+	PRODUCT
+	PREFIX
+	FNCALL
 )
 
 // Parser parses the token from the lexer,
@@ -15,14 +28,21 @@ type Parser struct {
 	errors    []string
 	token     token.Token
 	peekToken token.Token
+
+	prefixParseHandlers map[token.Type]ast.PrefixParseHandler
+	infixParseHandlers  map[token.Type]ast.InfixParseHandler
 }
 
 // New returns a initialized parser.
 func New(lexer *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:  lexer,
-		errors: []string{},
+		lexer:               lexer,
+		errors:              []string{},
+		prefixParseHandlers: map[token.Type]ast.PrefixParseHandler{},
 	}
+
+	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
+	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
 
 	// read two token to set 'token', 'peekToken' fields.
 	p.nextToken()
@@ -68,8 +88,56 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: p.token,
+		Value: p.token.Literal,
+	}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	literal := &ast.IntegerLiteral{
+		Token: p.token,
+	}
+
+	val, err := strconv.ParseInt(literal.Token.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", literal.Token.Literal)
+		p.errors = append(p.errors, msg)
 		return nil
 	}
+
+	literal.Value = int(val)
+
+	return literal
+}
+
+func (p *Parser) parseExpression(pr precedence) ast.Expression {
+	prefix, ok := p.prefixParseHandlers[p.token.Typ]
+	if !ok {
+		return nil
+	}
+
+	leftSide := prefix()
+
+	return leftSide
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	statement := &ast.ExpressionStatement{
+		Token:      p.token,
+		Expression: p.parseExpression(LOWEST),
+	}
+
+	if p.peekToken.Typ == token.SEMICOLON {
+		p.nextToken()
+	}
+
+	return statement
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
@@ -111,7 +179,17 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return statement
 }
 
-func (p *Parser) curTokenIs(t token.Type) bool { return p.token.Typ == t }
+func (p *Parser) registerPrefix(typ token.Type, fn ast.PrefixParseHandler) {
+	p.prefixParseHandlers[typ] = fn
+}
+
+func (p *Parser) registerInfix(typ token.Type, fn ast.InfixParseHandler) {
+	p.infixParseHandlers[typ] = fn
+}
+
+func (p *Parser) curTokenIs(t token.Type) bool {
+	return p.token.Typ == t
+}
 
 func (p *Parser) expectPeek(t token.Type) bool {
 	if p.peekToken.Typ == t {

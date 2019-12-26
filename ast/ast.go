@@ -5,6 +5,12 @@ import (
 )
 
 type (
+	// PrefixParseHandler handles the prefix operators.
+	PrefixParseHandler func() Expression
+
+	// InfixParseHandler handles infix operators.
+	InfixParseHandler func(expression Expression) Expression
+
 	// Node represents top level node in ast.
 	Node interface {
 		// Literal returns the literal value associated with the token.
