@@ -16,6 +16,22 @@ func TestOperatorPrecedenceParse(t *testing.T) {
 		expected string
 	}{
 		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
 			"-a * b",
 			"((-a) * b)",
 		},
@@ -326,6 +342,26 @@ let foobar = 838383;
 			return
 		}
 	}
+}
+
+func testIdentifier(t *testing.T, expression ast.Expression, val string) bool {
+	identifier, ok := expression.(*ast.Identifier)
+	if !ok {
+		t.Errorf("expression is not *ast.Identifier have = %T", expression)
+		return false
+	}
+
+	if identifier.Value != val {
+		t.Errorf("identifier.Value is not %q, have = %q", val, identifier.Value)
+		return false
+	}
+
+	if identifier.Literal() != val {
+		t.Errorf("identifier.Literal() is not %q, have = %q", val, identifier.Literal())
+		return false
+	}
+
+	return true
 }
 
 func testIntegerLiteral(t *testing.T, il ast.Expression, val int) bool {

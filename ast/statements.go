@@ -13,10 +13,16 @@ type (
 		Value string
 	}
 
-	// IntegerLiteral represents and integer expression.
+	// IntegerLiteral represents an integer expression.
 	IntegerLiteral struct {
 		Token token.Token
 		Value int
+	}
+
+	// BooleanLiteral represents an boolean expression.
+	BooleanLiteral struct {
+		Token token.Token
+		Value bool
 	}
 
 	// PrefixExpression represents an operator
@@ -62,6 +68,11 @@ type (
 		Expression Expression
 	}
 )
+
+// implement Expression interface for type checking.
+func (bl *BooleanLiteral) expression()     {}
+func (bl *BooleanLiteral) Literal() string { return bl.Token.Literal }
+func (bl *BooleanLiteral) String() string  { return bl.Token.Literal }
 
 // implement Expression interface for type checking.
 func (ie *InfixExpression) expression()     {}

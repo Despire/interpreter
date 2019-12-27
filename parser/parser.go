@@ -53,10 +53,10 @@ func New(lexer *lexer.Lexer) *Parser {
 		infixParseHandlers:  map[token.Type]ast.InfixParseHandler{},
 	}
 
+	p.registerPrefix(token.TRUE, p.parseBool)
+	p.registerPrefix(token.FALSE, p.parseBool)
 	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
-
 	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
-
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
@@ -114,6 +114,13 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	default:
 		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseBool() ast.Expression {
+	return &ast.BooleanLiteral{
+		Token: p.token,
+		Value: p.curTokenIs(token.TRUE),
 	}
 }
 
