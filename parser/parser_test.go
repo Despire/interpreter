@@ -10,6 +10,124 @@ import (
 	"github.com/despire/interpreter/token"
 )
 
+func TestOperatorPrecedenceParse(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			"-a * b",
+			"((-a) * b)",
+		},
+		{
+			"!-a",
+			"(!(-a))",
+		},
+		{
+			"a + b + c",
+			"((a + b) + c)",
+		},
+		{
+			"a + b - c",
+			"((a + b) - c)",
+		},
+		{
+			"a * b * c",
+			"((a * b) * c)",
+		},
+		{
+			"a * b / c",
+			"((a * b) / c)",
+		},
+		{
+			"a + b / c",
+			"(a + (b / c))",
+		},
+		{
+			"a + b * c + d / e - f",
+			"(((a + (b * c)) + (d / e)) - f)",
+		},
+		{
+			"5 > 4 == 3 < 4",
+			"((5 > 4) == (3 < 4))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+
+		actual := program.String()
+
+		if actual != tt.expected {
+			t.Errorf("expected=%q, got=%q", tt.expected, actual)
+		}
+	}
+}
+
+func TestInfixExpressions(t *testing.T) {
+	tests := []struct {
+		in    string
+		left  int
+		op    string
+		right int
+	}{
+		{"5 + 5", 5, "+", 5},
+		{"5 - 5", 5, "-", 5},
+		{"5 * 5", 5, "*", 5},
+		{"5 / 5", 5, "/", 5},
+		{"5 > 5", 5, ">", 5},
+		{"5 < 5", 5, "<", 5},
+		{"5 == 5", 5, "==", 5},
+		{"5 != 5", 5, "!=", 5},
+	}
+
+	for i, tt := range tests {
+		t.Run("infix-expressions "+strconv.Itoa(i), func(t *testing.T) {
+			l := lexer.New(tt.in)
+			p := New(l)
+			program := p.ParseProgram()
+			checkParserErrors(t, p)
+
+			if len(program.Statement) != 1 {
+				t.Fatalf("program.Statements does not contain %d statements, have %d", 1, len(program.Statement))
+			}
+
+			statement, ok := program.Statement[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("program.Statements[0] is not *ast.ExpressionStatement, have = %T", program.Statement[0])
+			}
+
+			expression, ok := statement.Expression.(*ast.InfixExpression)
+			if !ok {
+				t.Fatalf("expression is not *ast.InfixExpression, have = %T", statement.Expression)
+			}
+
+			if !testIntegerLiteral(t, expression.Left, tt.left) {
+				return
+			}
+
+			if expression.Operator != tt.op {
+				t.Fatalf("expression.Operator is not %q, have = %s", tt.op, expression.Operator)
+			}
+
+			if !testIntegerLiteral(t, expression.Right, tt.right) {
+				return
+			}
+		})
+	}
+}
+
 func TestPrefixExpressions(t *testing.T) {
 	tests := []struct {
 		in  string

@@ -20,6 +20,17 @@ const (
 	FNCALL
 )
 
+var precedences = map[token.Type]precedence{
+	token.EQUAL:    EQUALS,
+	token.NEQUAL:   EQUALS,
+	token.LESST:    LTGT,
+	token.GREATERT: LTGT,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
+	token.ASTERISK: PRODUCT,
+}
+
 // Parser parses the token from the lexer,
 // to create a data structure (ast) to represent
 // the source code.
@@ -39,12 +50,24 @@ func New(lexer *lexer.Lexer) *Parser {
 		lexer:               lexer,
 		errors:              []string{},
 		prefixParseHandlers: map[token.Type]ast.PrefixParseHandler{},
+		infixParseHandlers:  map[token.Type]ast.InfixParseHandler{},
 	}
 
 	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
+
 	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
+
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.EQUAL, p.parseInfixExpression)
+	p.registerInfix(token.NEQUAL, p.parseInfixExpression)
+	p.registerInfix(token.LESST, p.parseInfixExpression)
+	p.registerInfix(token.GREATERT, p.parseInfixExpression)
 
 	// read two token to set 'token', 'peekToken' fields.
 	p.nextToken()
@@ -94,6 +117,20 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.token,
+		Operator: p.token.Literal,
+		Left:     left,
+	}
+
+	precedence := p.currentPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
+
+	return expression
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
 		Token:    p.token,
@@ -139,6 +176,17 @@ func (p *Parser) parseExpression(pr precedence) ast.Expression {
 	}
 
 	leftSide := prefix()
+
+	for !(p.peekToken.Typ == token.SEMICOLON) && pr < p.peekPrecedence() {
+		infix, ok := p.infixParseHandlers[p.peekToken.Typ]
+		if !ok {
+			break
+		}
+
+		p.nextToken()
+
+		leftSide = infix(leftSide)
+	}
 
 	return leftSide
 }
@@ -201,6 +249,22 @@ func (p *Parser) registerPrefix(typ token.Type, fn ast.PrefixParseHandler) {
 
 func (p *Parser) registerInfix(typ token.Type, fn ast.InfixParseHandler) {
 	p.infixParseHandlers[typ] = fn
+}
+
+func (p *Parser) currentPrecedence() precedence {
+	if p, ok := precedences[p.token.Typ]; ok {
+		return p
+	}
+
+	return LOWEST
+}
+
+func (p *Parser) peekPrecedence() precedence {
+	if p, ok := precedences[p.peekToken.Typ]; ok {
+		return p
+	}
+
+	return LOWEST
 }
 
 func (p *Parser) curTokenIs(t token.Type) bool {

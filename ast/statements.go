@@ -27,6 +27,15 @@ type (
 		Right    Expression
 	}
 
+	// InfixExpression represents an binary
+	// operator that contains a left, right expression.
+	InfixExpression struct {
+		Token    token.Token
+		Left     Expression
+		Operator string
+		Right    Expression
+	}
+
 	// LetStatement consists of
 	// a identified (the LHS of the statement)
 	// and an expression (the RHS of the statement).
@@ -53,6 +62,21 @@ type (
 		Expression Expression
 	}
 )
+
+// implement Expression interface for type checking.
+func (ie *InfixExpression) expression()     {}
+func (ie *InfixExpression) Literal() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	buff := new(strings.Builder)
+
+	buff.WriteString("(")
+	buff.WriteString(ie.Left.String())
+	buff.WriteString(" " + ie.Operator + " ")
+	buff.WriteString(ie.Right.String())
+	buff.WriteString(")")
+
+	return buff.String()
+}
 
 // implement expression interface for type checking.
 func (pe *PrefixExpression) expression()     {}
