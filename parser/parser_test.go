@@ -1,11 +1,56 @@
 package parser
 
 import (
+	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/despire/interpreter/ast"
 	"github.com/despire/interpreter/lexer"
 	"github.com/despire/interpreter/token"
-	"testing"
 )
+
+func TestPrefixExpressions(t *testing.T) {
+	tests := []struct {
+		in  string
+		op  string
+		val int64
+	}{
+		{"!5", "!", 5},
+		{"-15", "-", 15},
+	}
+
+	for i, tt := range tests {
+		t.Run("prefix-tests-"+strconv.Itoa(i), func(t *testing.T) {
+			l := lexer.New(tt.in)
+			p := New(l)
+			program := p.ParseProgram()
+			checkParserErrors(t, p)
+
+			if len(program.Statement) != 1 {
+				t.Fatalf("program.Statements does not contain %d statemtns, have %d", 1, len(program.Statement))
+			}
+
+			statement, ok := program.Statement[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("program.Statements[0] is not *ast.Expression, have = %T", program.Statement[0])
+			}
+
+			expression, ok := statement.Expression.(*ast.PrefixExpression)
+			if !ok {
+				t.Fatalf("statement is not ast.PrefixExpression have = %T", statement.Expression)
+			}
+
+			if expression.Operator != tt.op {
+				t.Fatalf("expression.Operator is not %q, have %q", tt.op, expression.Operator)
+			}
+
+			if !testIntegerLiteral(t, expression.Right, int(tt.val)) {
+				return
+			}
+		})
+	}
+}
 
 func TestIntegerLiteralExpression(t *testing.T) {
 	input := `5;`
@@ -163,6 +208,26 @@ let foobar = 838383;
 			return
 		}
 	}
+}
+
+func testIntegerLiteral(t *testing.T, il ast.Expression, val int) bool {
+	v, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("integer literal not *ast.IntegerLiteral, have = %T", il)
+		return false
+	}
+
+	if v.Value != val {
+		t.Errorf("integer.Value not %d, have %d", val, v.Value)
+		return false
+	}
+
+	if v.Literal() != fmt.Sprintf("%d", val) {
+		t.Errorf("integer.Literal not %d, have %s", val, v.Literal())
+		return false
+	}
+
+	return true
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {

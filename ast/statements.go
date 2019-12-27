@@ -19,6 +19,14 @@ type (
 		Value int
 	}
 
+	// PrefixExpression represents an operator
+	// that is allowed to prefix an expression.
+	PrefixExpression struct {
+		Token    token.Token
+		Operator string
+		Right    Expression
+	}
+
 	// LetStatement consists of
 	// a identified (the LHS of the statement)
 	// and an expression (the RHS of the statement).
@@ -45,6 +53,20 @@ type (
 		Expression Expression
 	}
 )
+
+// implement expression interface for type checking.
+func (pe *PrefixExpression) expression()     {}
+func (pe *PrefixExpression) Literal() string { return pe.Token.Literal }
+func (pe *PrefixExpression) String() string {
+	buff := new(strings.Builder)
+
+	buff.WriteString("(")
+	buff.WriteString(pe.Operator)
+	buff.WriteString(pe.Right.String())
+	buff.WriteString(")")
+
+	return buff.String()
+}
 
 // implement Statement interface for type checking.
 func (s *LetStatement) statement()      {}
