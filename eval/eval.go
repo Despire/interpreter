@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"fmt"
+
 	"github.com/despire/interpreter/ast"
 	"github.com/despire/interpreter/objects"
 	"github.com/despire/interpreter/token"
@@ -15,9 +17,17 @@ var (
 func Eval(node ast.Node) objects.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statement)
+		return evalProgram(node.Statement)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
+	case *ast.ReturnStatement:
+		val := Eval(node.Expression)
+		if isError(val) {
+			return val
+		}
+		return &objects.Return{
+			Value: val,
+		}
 	case *ast.IntegerLiteral:
 		return &objects.Integer{
 			Value: int64(node.Value),
@@ -28,16 +38,36 @@ func Eval(node ast.Node) objects.Object {
 		}
 		return FALSE
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		return evalBlock(node)
 	case *ast.IfExpression:
 		return evalIfExpression(node)
 	case *ast.PrefixExpression:
-		return evalPrefix(node.Operator, Eval(node.Right))
+		exp := Eval(node.Right)
+		if isError(exp) {
+			return exp
+		}
+		return evalPrefix(node.Operator, exp)
 	case *ast.InfixExpression:
-		return evalInfix(node.Operator, Eval(node.Left), Eval(node.Right))
+		left := Eval(node.Left)
+		if isError(left) {
+			return left
+		}
+
+		right := Eval(node.Right)
+		if isError(right) {
+			return right
+		}
+		return evalInfix(node.Operator, left, right)
 	}
 
 	return nil
+}
+
+func isError(o objects.Object) bool {
+	if o != nil {
+		return o.Type() == objects.ERROR
+	}
+	return false
 }
 
 func isOk(o objects.Object) bool {
@@ -55,6 +85,9 @@ func isOk(o objects.Object) bool {
 
 func evalIfExpression(exp *ast.IfExpression) objects.Object {
 	condition := Eval(exp.Condition)
+	if isError(condition) {
+		return condition
+	}
 
 	if isOk(condition) {
 		return Eval(exp.Consequence)
@@ -107,7 +140,7 @@ func evalIntegerInfix(op string, left objects.Object, right objects.Object) obje
 		}
 		return FALSE
 	default:
-		return NULL
+		return newError(fmt.Sprintf("unknown operator: %s %s %s", left.Type(), op, right.Type()))
 	}
 }
 
@@ -125,8 +158,10 @@ func evalInfix(op string, left objects.Object, right objects.Object) objects.Obj
 			return TRUE
 		}
 		return FALSE
+	case left.Type() != right.Type():
+		return newError(fmt.Sprintf("type mismatch: %s %s %s", left.Type(), op, right.Type()))
 	default:
-		return NULL
+		return newError(fmt.Sprintf("unknown operator: %s %s %s", left.Type(), op, right.Type()))
 	}
 }
 
@@ -145,7 +180,7 @@ func evalBang(exp objects.Object) objects.Object {
 
 func evalMinus(exp objects.Object) objects.Object {
 	if exp.Type() != objects.INTEGER {
-		return NULL
+		return newError(fmt.Sprintf("unknown operator: -%s", exp.Type()))
 	}
 
 	return &objects.Integer{
@@ -160,16 +195,43 @@ func evalPrefix(op string, exp objects.Object) objects.Object {
 	case token.MINUS:
 		return evalMinus(exp)
 	default:
-		return NULL
+		return newError(fmt.Sprintf("unknown operator: %s%s", op, exp.Type()))
 	}
 }
 
-func evalStatements(statements []ast.Statement) objects.Object {
+func evalProgram(statements []ast.Statement) objects.Object {
 	var result objects.Object
 
 	for _, statement := range statements {
 		result = Eval(statement)
+
+		switch result := result.(type) {
+		case *objects.Return:
+			return result.Value
+		case *objects.Error:
+			return result
+		}
 	}
 
 	return result
+}
+
+func evalBlock(block *ast.BlockStatement) objects.Object {
+	var result objects.Object
+
+	for _, statement := range block.Statements {
+		result = Eval(statement)
+
+		if result != nil && (result.Type() == objects.RETURN || result.Type() == objects.ERROR) {
+			return result
+		}
+	}
+
+	return result
+}
+
+func newError(s string) *objects.Error {
+	return &objects.Error{
+		Value: s,
+	}
 }
