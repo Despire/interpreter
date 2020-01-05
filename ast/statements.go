@@ -1,11 +1,27 @@
 package ast
 
 import (
-	"github.com/despire/interpreter/token"
 	"strings"
+
+	"github.com/despire/interpreter/token"
 )
 
 type (
+	// FunctionLiteral represents a function
+	// expression.
+	FunctionLiteral struct {
+		Token      token.Token
+		Parameters []*Identifier
+		Body       *BlockStatement
+	}
+
+	// Block statement represents a series
+	// of statements wrapped in a '{}'
+	BlockStatement struct {
+		Token      token.Token
+		Statements []Statement
+	}
+
 	// Identifier represents a value that is binded
 	// to a name.
 	Identifier struct {
@@ -23,6 +39,22 @@ type (
 	BooleanLiteral struct {
 		Token token.Token
 		Value bool
+	}
+
+	// IfExpression represents and if/else expression.
+	IfExpression struct {
+		Token       token.Token
+		Condition   Expression
+		Consequence *BlockStatement
+		Alternative *BlockStatement
+	}
+
+	// CallExpression represents a function
+	// call expresion.
+	CallExpression struct {
+		Token     token.Token
+		Function  Expression
+		Arguments []Expression
 	}
 
 	// PrefixExpression represents an operator
@@ -68,6 +100,75 @@ type (
 		Expression Expression
 	}
 )
+
+// implement the Expression interface for type checking.
+func (fl *CallExpression) expression()     {}
+func (fl *CallExpression) Literal() string { return fl.Token.Literal }
+func (fl *CallExpression) String() string {
+	buff := new(strings.Builder)
+
+	args := []string{}
+	for _, a := range fl.Arguments {
+		args = append(args, a.String())
+	}
+
+	buff.WriteString(fl.Function.String())
+	buff.WriteString("(")
+	buff.WriteString(strings.Join(args, ", "))
+	buff.WriteString(")")
+
+	return buff.String()
+}
+
+// implement the Expression interface for type checking.
+func (fl *FunctionLiteral) expression()     {}
+func (fl *FunctionLiteral) Literal() string { return fl.Token.Literal }
+func (fl *FunctionLiteral) String() string {
+	buff := new(strings.Builder)
+
+	params := []string{}
+	for _, p := range fl.Parameters {
+		params = append(params, p.String())
+	}
+
+	buff.WriteString(fl.Literal())
+	buff.WriteString("(")
+	buff.WriteString(strings.Join(params, ", "))
+	buff.WriteString(") ")
+	buff.WriteString(fl.Body.String())
+}
+
+// implement the Statement interface for type checking.
+func (bs *BlockStatement) statement()      {}
+func (bs *BlockStatement) Literal() string { return bs.Token.Literal }
+func (bs *BlockStatement) String() string {
+	buff := new(strings.Builder)
+
+	for _, s := range bs.Statements {
+		buff.WriteString(s.String())
+	}
+
+	return buff.String()
+}
+
+// implement Expression interface for type checking.
+func (ie *IfExpression) expression()     {}
+func (ie *IfExpression) Literal() string { return ie.Token.Literal }
+func (ie *IfExpression) String() string {
+	buff := new(strings.Builder)
+
+	buff.WriteString("if")
+	buff.WriteString(ie.Condition.String())
+	buff.WriteString(" ")
+	buff.WriteString(ie.Consequence.String())
+
+	if ie.Alternative != nil {
+		buff.WriteString(" ")
+		buff.WriteString(ie.Alternative.String())
+	}
+
+	return buff.String()
+}
 
 // implement Expression interface for type checking.
 func (bl *BooleanLiteral) expression()     {}

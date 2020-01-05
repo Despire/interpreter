@@ -10,11 +10,48 @@ import (
 	"github.com/despire/interpreter/token"
 )
 
+func TestIfExpressions(t *testing.T) {
+	input := `if (x < y) { x }`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statement) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements, have %d", 1, len(program.Statement))
+	}
+
+	statement, ok := program.Statement[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not of typ *ast.ExpressionStatement, have = %T", program.Statement[0])
+	}
+
+	expression, ok := statement.Expression.(*ast.IfExpression)
+	if !ok {
+		t.Fatalf("statement.Expression is not of typ *ast.IfExpression, have = %T", statement.Expression)
+	}
+
+	if !testInfi
+}
+
 func TestOperatorPrecedenceParse(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
 	}{
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
 		{
 			"3 < 5 == true",
 			"((3 < 5) == true)",

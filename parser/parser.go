@@ -59,6 +59,9 @@ func New(lexer *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INTEGER, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.LEFTPARENTHESIS, p.parseGroupedExpression)
+	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
@@ -115,6 +118,126 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.peekToken.Typ == token.RIGHTPARENTHESIS {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+
+	identifiers = append(identifiers, &ast.Identifier{
+		Token: p.token,
+		Value: p.token.Literal,
+	})
+
+	for p.peekToken.Typ == token.COMMA {
+		p.nextToken()
+		p.nextToken()
+
+		identifiers = append(identifiers, &ast.Identifier{
+			Token: p.token,
+			Value: p.token.Literal,
+		})
+	}
+
+	if !p.expectPeek(token.RIGHTPARENTHESIS) {
+		return nil
+	}
+
+	return identifiers
+}
+
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	literal := &ast.FunctionLiteral{
+		Token: p.token,
+	}
+
+	if !p.expectPeek(token.LEFTPARENTHESIS) {
+		return nil
+	}
+
+	literal.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LEFTBRACKET) {
+		return nil
+	}
+
+	literal.Body = p.parseBlockStatement()
+
+	return literal
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{
+		Token: p.token,
+	}
+
+	p.nextToken()
+
+	for !p.curTokenIs(token.RIGHTBRACKET) && !p.curTokenIs(token.EOF) {
+		statement := p.parseStatement()
+
+		if statement != nil {
+			block.Statements = append(block.Statements, statement)
+		}
+
+		p.nextToken()
+	}
+
+	return block
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{
+		Token: p.token,
+	}
+
+	if !p.expectPeek(token.LEFTPARENTHESIS) {
+		return nil
+	}
+
+	p.nextToken()
+
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RIGHTPARENTHESIS) {
+		return nil
+	}
+
+	if !p.expectPeek(token.LEFTBRACKET) {
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekToken.Typ == token.ELSE {
+		p.nextToken()
+
+		if !p.expectPeek(token.LEFTBRACKET) {
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	expression := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RIGHTPARENTHESIS) {
+		return nil
+	}
+
+	return expression
 }
 
 func (p *Parser) parseBool() ast.Expression {
