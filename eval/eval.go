@@ -86,6 +86,16 @@ func evalInfix(op string, left objects.Object, right objects.Object) objects.Obj
 	switch {
 	case left.Type() == objects.INTEGER && right.Type() == objects.INTEGER:
 		return evalIntegerInfix(op, left, right)
+	case op == token.EQUAL:
+		if left == right {
+			return TRUE
+		}
+		return FALSE
+	case op == token.NEQUAL:
+		if left != right {
+			return TRUE
+		}
+		return FALSE
 	default:
 		return NULL
 	}
