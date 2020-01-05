@@ -7,6 +7,31 @@ import (
 	"testing"
 )
 
+func TestIfElseExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", nil},
+		{"if (1) { 10 }", 10},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", nil},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
+	}
+
+	for _, tt := range tests {
+		have := testEval(tt.input)
+		i, ok := tt.expected.(int)
+		if ok {
+			testIntegerObject(t, have, int64(i))
+		} else {
+			testNullObject(t, have)
+		}
+	}
+}
+
 func TestBangOperator(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -118,6 +143,15 @@ func testBooleanObject(t *testing.T, obj objects.Object, expected bool) bool {
 
 	if result.Value != expected {
 		t.Errorf("object has wrong value. have=%t, want=%t", result.Value, expected)
+		return false
+	}
+
+	return true
+}
+
+func testNullObject(t *testing.T, o objects.Object) bool {
+	if o != NULL {
+		t.Errorf("object is not NULL. have=%T (%+v)", o, o)
 		return false
 	}
 
