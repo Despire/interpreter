@@ -1,13 +1,18 @@
 package objects
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/despire/interpreter/ast"
+	"strings"
+)
 
 const (
-	INTEGER Type = "INTEGER"
-	BOOLEAN      = "BOOLEAN"
-	NULL         = "NULL"
-	RETURN       = "RETURN_VALUE"
-	ERROR        = "ERROR"
+	INTEGER  Type = "INTEGER"
+	BOOLEAN       = "BOOLEAN"
+	NULL          = "NULL"
+	RETURN        = "RETURN_VALUE"
+	ERROR         = "ERROR"
+	FUNCTION      = "FUNCTION"
 )
 
 type (
@@ -36,6 +41,12 @@ type (
 	Error struct {
 		Value string
 	}
+
+	Function struct {
+		Parameters []*ast.Identifier
+		Body       *ast.BlockStatement
+		Env        *Environment
+	}
 )
 
 // implement Object interface
@@ -57,3 +68,23 @@ func (r *Return) Type() Type      { return RETURN }
 // implement Object interface
 func (e *Error) Inspect() string { return "ERROR: " + e.Value }
 func (e *Error) Type() Type      { return ERROR }
+
+// implement Object interface
+func (f *Function) Type() Type      { return FUNCTION }
+func (f *Function) Inspect() string {
+	buff := new(strings.Builder)
+
+	params := []string{}
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+
+	buff.WriteString("fn")
+	buff.WriteString("(")
+	buff.WriteString(strings.Join(params, ", "))
+	buff.WriteString(") {\n")
+	buff.WriteString(f.Body.String())
+	buff.WriteString("\n}")
+
+	return buff.String()
+}

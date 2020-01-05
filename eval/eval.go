@@ -45,6 +45,12 @@ func Eval(node ast.Node, env *objects.Environment) objects.Object {
 			return TRUE
 		}
 		return FALSE
+	case *ast.FunctionLiteral:
+		return &objects.Function{
+			Parameters: node.Parameters,
+			Body:       node.Body,
+			Env:        env,
+		}
 	case *ast.BlockStatement:
 		return evalBlock(node, env)
 	case *ast.IfExpression:
@@ -66,9 +72,65 @@ func Eval(node ast.Node, env *objects.Environment) objects.Object {
 			return right
 		}
 		return evalInfix(node.Operator, left, right)
+	case *ast.CallExpression:
+		fn := Eval(node.Function, env)
+		if isError(fn) {
+			return fn
+		}
+
+		args := evalExpressionList(node.Arguments, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+
+		return applyFunction(fn, args)
 	}
 
 	return nil
+}
+
+func unwrapreturnValue(o objects.Object) objects.Object {
+	if ret, ok := o.(*objects.Return); ok {
+		return ret.Value
+	}
+
+	return o
+}
+
+func extendFunctionEnv(fn *objects.Function, args []objects.Object) *objects.Environment {
+	env := objects.NewEnclosedEnvironment(fn.Env)
+
+	for i, p := range fn.Parameters {
+		env.Set(p.Value, args[i])
+	}
+
+	return env
+}
+
+func applyFunction(fn objects.Object, args []objects.Object) objects.Object {
+	function, ok := fn.(*objects.Function)
+	if !ok {
+		return newError(fmt.Sprintf("not a function: %s", fn.Type()))
+	}
+
+	eenv := extendFunctionEnv(function, args)
+	eval := Eval(function.Body, eenv)
+	return unwrapreturnValue(eval)
+}
+
+func evalExpressionList(exp []ast.Expression, env *objects.Environment) []objects.Object {
+	var result []objects.Object
+
+	for _, e := range exp {
+		eval := Eval(e, env)
+		if isError(eval) {
+			return []objects.Object{eval}
+		}
+
+		result = append(result, eval)
+	}
+
+	return result
 }
 
 func isError(o objects.Object) bool {
