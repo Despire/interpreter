@@ -57,6 +57,26 @@ func evalIntegerInfix(op string, left objects.Object, right objects.Object) obje
 		return &objects.Integer{
 			Value: int64(lVal) / int64(rVal),
 		}
+	case token.LESST:
+		if lVal < rVal {
+			return TRUE
+		}
+		return FALSE
+	case token.GREATERT:
+		if lVal > rVal {
+			return TRUE
+		}
+		return FALSE
+	case token.EQUAL:
+		if lVal == rVal {
+			return TRUE
+		}
+		return FALSE
+	case token.NEQUAL:
+		if lVal != rVal {
+			return TRUE
+		}
+		return FALSE
 	default:
 		return NULL
 	}
