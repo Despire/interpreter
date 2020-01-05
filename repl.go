@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/despire/interpreter/eval"
+	"github.com/despire/interpreter/parser"
 	"io"
 
 	"github.com/despire/interpreter/lexer"
-	"github.com/despire/interpreter/token"
 )
 
 const (
@@ -25,14 +26,27 @@ func Start(reader io.Reader, writer io.Writer) {
 		}
 
 		l := lexer.New(sc.Text())
-		for tok := l.NextToken(); tok.Typ != token.EOF; tok = l.NextToken() {
-			if _, err := fmt.Fprintf(writer, "%+v\n", tok); err != nil {
-				fmt.Printf("failed to write to output: %+v, reason: %v\n", writer, err)
-			}
+		p := parser.New(l)
+		program := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			printParseErrors(writer, p.Errors())
+			continue
+		}
+
+		e := eval.Eval(program)
+		if e != nil {
+			io.WriteString(writer, e.Inspect())
+			io.WriteString(writer, "\n")
 		}
 	}
 
 	if err := sc.Err(); err != nil {
 		fmt.Printf("failed to read from input: %+v\n", reader)
+	}
+}
+
+func printParseErrors(writer io.Writer, errors []string) {
+	for _, err := range errors {
+		io.WriteString(writer, "\t"+err+"\n")
 	}
 }

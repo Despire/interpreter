@@ -136,6 +136,8 @@ func (fl *FunctionLiteral) String() string {
 	buff.WriteString(strings.Join(params, ", "))
 	buff.WriteString(") ")
 	buff.WriteString(fl.Body.String())
+
+	return buff.String()
 }
 
 // implement the Statement interface for type checking.

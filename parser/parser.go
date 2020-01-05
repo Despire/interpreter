@@ -21,14 +21,15 @@ const (
 )
 
 var precedences = map[token.Type]precedence{
-	token.EQUAL:    EQUALS,
-	token.NEQUAL:   EQUALS,
-	token.LESST:    LTGT,
-	token.GREATERT: LTGT,
-	token.PLUS:     SUM,
-	token.MINUS:    SUM,
-	token.SLASH:    PRODUCT,
-	token.ASTERISK: PRODUCT,
+	token.EQUAL:           EQUALS,
+	token.NEQUAL:          EQUALS,
+	token.LESST:           LTGT,
+	token.GREATERT:        LTGT,
+	token.PLUS:            SUM,
+	token.MINUS:           SUM,
+	token.SLASH:           PRODUCT,
+	token.ASTERISK:        PRODUCT,
+	token.LEFTPARENTHESIS: FNCALL,
 }
 
 // Parser parses the token from the lexer,
@@ -71,6 +72,7 @@ func New(lexer *lexer.Lexer) *Parser {
 	p.registerInfix(token.NEQUAL, p.parseInfixExpression)
 	p.registerInfix(token.LESST, p.parseInfixExpression)
 	p.registerInfix(token.GREATERT, p.parseInfixExpression)
+	p.registerInfix(token.LEFTPARENTHESIS, p.parseCallExpression)
 
 	// read two token to set 'token', 'peekToken' fields.
 	p.nextToken()
@@ -118,6 +120,40 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.peekToken.Typ == token.RIGHTPARENTHESIS {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekToken.Typ == token.COMMA {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RIGHTPARENTHESIS) {
+		return nil
+	}
+
+	return args
+}
+
+func (p *Parser) parseCallExpression(fn ast.Expression) ast.Expression {
+	expression := &ast.CallExpression{
+		Token:     p.token,
+		Function:  fn,
+		Arguments: p.parseCallArguments(),
+	}
+	return expression
 }
 
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
@@ -341,7 +377,9 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 	p.nextToken()
 
-	for !p.curTokenIs(token.SEMICOLON) {
+	statement.Expression = p.parseExpression(LOWEST)
+
+	if p.peekToken.Typ == token.SEMICOLON {
 		p.nextToken()
 	}
 
@@ -366,7 +404,11 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	for !p.curTokenIs(token.SEMICOLON) {
+	p.nextToken()
+
+	statement.Expression = p.parseExpression(LOWEST)
+
+	if p.peekToken.Typ == token.SEMICOLON {
 		p.nextToken()
 	}
 
