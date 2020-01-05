@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/despire/interpreter/eval"
+	"github.com/despire/interpreter/objects"
 	"github.com/despire/interpreter/parser"
 	"io"
 
@@ -18,6 +19,7 @@ const (
 // and writes the output to writer.
 func Start(reader io.Reader, writer io.Writer) {
 	sc := bufio.NewScanner(reader)
+	env := objects.NewEnvironment()
 
 	for sc.Scan() {
 		if _, err := fmt.Fprintf(writer, prompt); err != nil {
@@ -33,7 +35,7 @@ func Start(reader io.Reader, writer io.Writer) {
 			continue
 		}
 
-		e := eval.Eval(program)
+		e := eval.Eval(program, env)
 		if e != nil {
 			io.WriteString(writer, e.Inspect())
 			io.WriteString(writer, "\n")
