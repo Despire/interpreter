@@ -1,2 +1,2 @@
 # interpreter
-A interpreter written in go (tutorial from https://interpreterbook.com/)
+A interpreter written in go for a made up language.
