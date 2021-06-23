@@ -20,8 +20,6 @@ let c = if (sum_result < 15) {
 };
 ```
 
-The value of `c` should be `false`;
-
-Example from the repl.
+The above program run in the REPL.
 
 ![alt test](repl.png)
