@@ -1,10 +1,11 @@
 package eval
 
 import (
-	"github.com/despire/interpreter/lexer"
-	"github.com/despire/interpreter/objects"
-	"github.com/despire/interpreter/parser"
 	"testing"
+
+	"github.com/Despire/interpreter/lexer"
+	"github.com/Despire/interpreter/objects"
+	"github.com/Despire/interpreter/parser"
 )
 
 func TestClosures(t *testing.T) {

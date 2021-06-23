@@ -2,8 +2,9 @@ package objects
 
 import (
 	"fmt"
-	"github.com/despire/interpreter/ast"
 	"strings"
+
+	"github.com/Despire/interpreter/ast"
 )
 
 const (
@@ -70,7 +71,7 @@ func (e *Error) Inspect() string { return "ERROR: " + e.Value }
 func (e *Error) Type() Type      { return ERROR }
 
 // implement Object interface
-func (f *Function) Type() Type      { return FUNCTION }
+func (f *Function) Type() Type { return FUNCTION }
 func (f *Function) Inspect() string {
 	buff := new(strings.Builder)
 

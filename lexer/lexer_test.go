@@ -1,8 +1,9 @@
 package lexer
 
 import (
-	"github.com/despire/interpreter/token"
 	"testing"
+
+	"github.com/Despire/interpreter/token"
 )
 
 func TestNextToken(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/despire/interpreter/ast"
-	"github.com/despire/interpreter/lexer"
-	"github.com/despire/interpreter/token"
+	"github.com/Despire/interpreter/ast"
+	"github.com/Despire/interpreter/lexer"
+	"github.com/Despire/interpreter/token"
 )
 
 func TestOperatorPrecedenceParse(t *testing.T) {

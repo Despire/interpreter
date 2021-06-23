@@ -3,12 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/despire/interpreter/eval"
-	"github.com/despire/interpreter/objects"
-	"github.com/despire/interpreter/parser"
 	"io"
 
-	"github.com/despire/interpreter/lexer"
+	"github.com/Despire/interpreter/eval"
+	"github.com/Despire/interpreter/lexer"
+	"github.com/Despire/interpreter/objects"
+	"github.com/Despire/interpreter/parser"
 )
 
 const (

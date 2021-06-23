@@ -2,10 +2,11 @@ package parser
 
 import (
 	"fmt"
-	"github.com/despire/interpreter/ast"
-	"github.com/despire/interpreter/lexer"
-	"github.com/despire/interpreter/token"
 	"strconv"
+
+	"github.com/Despire/interpreter/ast"
+	"github.com/Despire/interpreter/lexer"
+	"github.com/Despire/interpreter/token"
 )
 
 type precedence int

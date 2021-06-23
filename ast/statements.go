@@ -3,7 +3,7 @@ package ast
 import (
 	"strings"
 
-	"github.com/despire/interpreter/token"
+	"github.com/Despire/interpreter/token"
 )
 
 type (

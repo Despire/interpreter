@@ -3,9 +3,9 @@ package eval
 import (
 	"fmt"
 
-	"github.com/despire/interpreter/ast"
-	"github.com/despire/interpreter/objects"
-	"github.com/despire/interpreter/token"
+	"github.com/Despire/interpreter/ast"
+	"github.com/Despire/interpreter/objects"
+	"github.com/Despire/interpreter/token"
 )
 
 var (

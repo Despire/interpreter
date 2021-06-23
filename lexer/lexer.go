@@ -3,7 +3,7 @@ package lexer
 import (
 	"unicode"
 
-	"github.com/despire/interpreter/token"
+	"github.com/Despire/interpreter/token"
 )
 
 const (
