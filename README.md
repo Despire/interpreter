@@ -1,5 +1,5 @@
 # interpreter
-A interpreter written in go for a made-up language.
+A interpreter written in go for a made-up language. [ref](https://interpreterbook.com/)
 
 # Example program
 
